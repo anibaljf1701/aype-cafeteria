@@ -10,6 +10,18 @@ variable "project_name" {
   default     = "aype"
 }
 
+variable "domain_name" {
+  description = "Dominio raíz para la zona alojada de Route 53"
+  type        = string
+  default     = "aype.com"
+}
+
+variable "frontend_port" {
+  description = "Puerto HTTP del contenedor frontend"
+  type        = number
+  default     = 80
+}
+
 variable "environment" {
   description = "Entorno de despliegue (dev o prod)"
   type        = string
