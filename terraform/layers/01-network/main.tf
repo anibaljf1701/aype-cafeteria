@@ -8,13 +8,7 @@ terraform {
   }
 
   # Configuración del Backend Remoto (S3 + DynamoDB Lock)
-  backend "s3" {
-    bucket         = "aype-tfstate-portfolio"
-    key            = "layers/01-network/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
-  }
+  backend "s3" {}
 }
 
 provider "aws" {
@@ -32,6 +26,8 @@ module "vpc" {
 
   name = "${var.project_name}-${var.environment}-vpc"
   cidr = var.vpc_cidr
+
+  create_igw = true
 
   # Tomamos 2 AZs automáticamente de la región seleccionada
   azs            = slice(data.aws_availability_zones.available.names, 0, 2)

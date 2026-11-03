@@ -12,3 +12,8 @@ output "azs" {
   description = "Zonas de disponibilidad utilizadas (2 AZs)"
   value       = module.vpc.azs
 }
+
+output "internet_gateway_id" {
+  description = "ID del Internet Gateway asociado a las subredes públicas"
+  value       = module.vpc.igw_id
+}
