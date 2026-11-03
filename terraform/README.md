@@ -15,6 +15,62 @@ subredes privadas ni servicios de aplicación.
 
 ## Red
 
+El diagrama muestra los recursos definidos por Terraform hasta ahora; todavía
+no implica que hayan sido aplicados en AWS.
+
+```mermaid
+flowchart LR
+  users[Usuarios] --> cf[CloudFront<br/>pendiente]
+  zone[Route 53: aype.com<br/>solo se crea desde prod<br/>sin registros de aplicación] -. DNS futuro .-> cf
+
+  subgraph dev[Entorno dev]
+    subgraph vpcdev[VPC pública dev]
+      igwdev[Internet Gateway]
+      routesdev[Ruta pública<br/>0.0.0.0/0 hacia IGW]
+      subnetdeva[Subred pública AZ 1]
+      subnetdevb[Subred pública AZ 2]
+      albdev[ALB público :80<br/>SG: HTTP solo desde CloudFront]
+      tgdev[Target group :80<br/>sin targets]
+      taskdev[ECS Fargate pendiente<br/>IP pública<br/>SG: solo ALB :80]
+      igwdev --- routesdev
+      routesdev --- subnetdeva
+      routesdev --- subnetdevb
+      subnetdeva --- albdev
+      subnetdevb --- albdev
+      albdev --> tgdev
+      tgdev -. targets futuros .-> taskdev
+    end
+  end
+
+  subgraph prod[Entorno prod]
+    subgraph vpcprod[VPC pública prod]
+      igwprod[Internet Gateway]
+      routesprod[Ruta pública<br/>0.0.0.0/0 hacia IGW]
+      subnetproda[Subred pública AZ 1]
+      subnetprodb[Subred pública AZ 2]
+      albprod[ALB público :80<br/>SG: HTTP solo desde CloudFront]
+      tgprod[Target group :80<br/>sin targets]
+      taskprod[ECS Fargate pendiente<br/>IP pública<br/>SG: solo ALB :80]
+      igwprod --- routesprod
+      routesprod --- subnetproda
+      routesprod --- subnetprodb
+      subnetproda --- albprod
+      subnetprodb --- albprod
+      albprod --> tgprod
+      tgprod -. targets futuros .-> taskprod
+    end
+  end
+
+  zone -. alias futuros .-> cf
+  cf -. origen HTTP futuro .-> albdev
+  cf -. origen HTTP futuro .-> albprod
+```
+
+Cada VPC usa dos subredes públicas en distintas zonas de disponibilidad, con
+rutas al Internet Gateway y sin NAT Gateway. El SG del ALB permite HTTP desde el
+prefix list administrado de CloudFront; el SG frontend permite el puerto 80
+solo desde el SG del ALB. La zona de Route 53 se crea una sola vez en `prod`.
+
 Desde `terraform/layers/01-network`, inicializa y planifica cada entorno con su
 configuración correspondiente:
 
