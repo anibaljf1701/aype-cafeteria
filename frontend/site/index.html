@@ -85,7 +85,7 @@
                     <a href="#historia" class="text-gray-400 hover:text-irupe-400 transition font-light text-xs tracking-[0.15em] uppercase">Historia</a>
                     <a href="#menu" class="text-gray-400 hover:text-irupe-400 transition font-light text-xs tracking-[0.15em] uppercase">La Reserva</a>
                     <a href="#cata" class="text-gray-400 hover:text-irupe-400 transition font-light text-xs tracking-[0.15em] uppercase">Catas</a>
-                    <a href="#menu" class="px-6 py-2 border border-irupe-500 text-irupe-400 hover:bg-irupe-500 hover:text-white transition-all duration-300 text-xs tracking-[0.15em] uppercase">Reservar Taza</a>
+                    <a href="#reserva" data-reservation-open class="px-6 py-2 border border-irupe-500 text-irupe-400 hover:bg-irupe-500 hover:text-white transition-all duration-300 text-xs tracking-[0.15em] uppercase">Reservar Taza</a>
                 </div>
 
                 <!-- Botón Menú Móvil -->
@@ -105,7 +105,7 @@
                 <a href="#historia" class="mobile-link text-2xl font-serif italic text-white hover:text-irupe-400">Nuestra Historia</a>
                 <a href="#menu" class="mobile-link text-2xl font-serif italic text-white hover:text-irupe-400">La Reserva</a>
                 <a href="#cata" class="mobile-link text-2xl font-serif italic text-white hover:text-irupe-400">Catas Semanales</a>
-                <a href="#menu" class="mobile-link mt-8 px-8 py-3 border border-irupe-500 text-irupe-400 uppercase tracking-widest text-sm">Reservar Taza</a>
+                <a href="#reserva" data-reservation-open class="mobile-link mt-8 px-8 py-3 border border-irupe-500 text-irupe-400 uppercase tracking-widest text-sm">Reservar Taza</a>
             </div>
         </div>
     </nav>
@@ -129,7 +129,7 @@
             </p>
 
             <div class="flex flex-col sm:flex-row justify-center gap-6">
-                <a href="#menu" class="px-8 py-4 bg-irupe-600 hover:bg-irupe-500 text-white transition-all duration-300 font-medium tracking-[0.15em] text-xs uppercase shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:shadow-[0_0_30px_rgba(219,39,119,0.5)]">
+                <a href="#reserva" data-reservation-open class="px-8 py-4 bg-irupe-600 hover:bg-irupe-500 text-white transition-all duration-300 font-medium tracking-[0.15em] text-xs uppercase shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:shadow-[0_0_30px_rgba(219,39,119,0.5)]">
                     Solicitar Reserva
                 </a>
             </div>
@@ -226,7 +226,7 @@
                         </div>
                     </div>
 
-                    <button class="w-full mt-10 py-4 border border-irupe-500 text-irupe-400 hover:bg-irupe-500 hover:text-white transition-all text-xs tracking-[0.2em] uppercase">
+                    <button type="button" data-reservation-open class="w-full mt-10 py-4 border border-irupe-500 text-irupe-400 hover:bg-irupe-500 hover:text-white transition-all text-xs tracking-[0.2em] uppercase">
                         Solicitar Reserva
                     </button>
                 </div>
@@ -327,14 +327,66 @@
         </div>
     </footer>
 
+    <div id="reservation-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm" aria-hidden="true">
+        <button type="button" data-reservation-close class="absolute inset-0 h-full w-full cursor-default" aria-label="Cerrar reserva"></button>
+        <section role="dialog" aria-modal="true" aria-labelledby="reservation-title" class="relative z-10 w-full max-w-lg border border-ayme-700 bg-ayme-900 p-6 shadow-2xl sm:p-8">
+            <button type="button" data-reservation-close class="absolute right-4 top-3 text-2xl font-light text-gray-400 transition hover:text-white" aria-label="Cerrar">&times;</button>
+            <span class="mb-3 block text-[10px] uppercase tracking-[0.3em] text-irupe-400">Colección Raíces</span>
+            <h2 id="reservation-title" class="mb-2 font-serif text-3xl italic text-white">Reservá tu taza</h2>
+            <p class="mb-6 text-xs font-light text-gray-400">Máximo 2 tazas por persona.</p>
+
+            <div class="mb-6 flex items-end justify-between border-y border-ayme-700 py-4" aria-live="polite">
+                <span class="text-xs uppercase tracking-widest text-gray-400">Disponibles hoy</span>
+                <span class="font-serif text-3xl text-irupe-400"><span id="available-cups">--</span><span class="ml-2 text-sm text-gray-400">/ 50</span></span>
+            </div>
+
+            <form id="reservation-form" class="space-y-4">
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="coffee-variety">Variedad
+                    <select id="coffee-variety" name="variedad_cafe" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-irupe-500">
+                        <option value="Ayme">Ayme</option>
+                        <option value="Irupé">Irupé</option>
+                        <option value="Kimey">Kimey</option>
+                    </select>
+                </label>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="cup-quantity">Cantidad
+                    <select id="cup-quantity" name="cantidad_tazas" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-irupe-500">
+                        <option value="1">1 taza</option>
+                        <option value="2">2 tazas</option>
+                    </select>
+                </label>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="customer-name">Nombre
+                    <input id="customer-name" name="nombre_cliente" type="text" autocomplete="name" minlength="1" maxlength="100" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition placeholder:text-gray-600 focus:border-irupe-500" placeholder="Tu nombre">
+                </label>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="customer-email">Email
+                    <input id="customer-email" name="email" type="email" autocomplete="email" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition placeholder:text-gray-600 focus:border-irupe-500" placeholder="nombre@correo.com">
+                </label>
+                <p id="reservation-message" class="min-h-5 text-sm text-gray-400" role="status" aria-live="polite"></p>
+                <button id="reservation-submit" type="submit" disabled class="w-full border border-irupe-500 bg-irupe-600 px-4 py-4 text-xs font-medium uppercase tracking-[0.2em] text-white transition hover:bg-irupe-500 disabled:cursor-not-allowed disabled:border-ayme-700 disabled:bg-ayme-800 disabled:text-gray-500">
+                    Confirmar reserva
+                </button>
+            </form>
+        </section>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = (window.AYPE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
             const navbar = document.getElementById('navbar');
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const mobileMenu = document.getElementById('mobile-menu');
             const menuIcon = document.getElementById('menu-icon');
             const mobileLinks = document.querySelectorAll('.mobile-link');
+            const reservationModal = document.getElementById('reservation-modal');
+            const reservationForm = document.getElementById('reservation-form');
+            const reservationMessage = document.getElementById('reservation-message');
+            const availableCups = document.getElementById('available-cups');
+            const cupQuantity = document.getElementById('cup-quantity');
+            const reservationSubmit = document.getElementById('reservation-submit');
             let menuOpen = false;
+            let cupsAvailable = null;
+            let availabilityTimer = null;
+            let reservationConfirmed = false;
+            let reservationFeedback = '';
 
             // Nav Scroll Effect (Estilo oscuro/vidrio)
             window.addEventListener('scroll', () => {
@@ -369,6 +421,106 @@
 
             mobileLinks.forEach(link => {
                 link.addEventListener('click', toggleMenu);
+            });
+
+            function updateReservationSubmit() {
+                const requestedCups = Number(cupQuantity.value);
+                reservationSubmit.disabled = reservationConfirmed
+                    || cupsAvailable === null
+                    || cupsAvailable < requestedCups;
+            }
+
+            async function refreshAvailability() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/v1/reservas/disponibilidad`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error('availability');
+                    const data = await response.json();
+                    cupsAvailable = data.tazas_disponibles;
+                    availableCups.textContent = cupsAvailable;
+                    if (!reservationConfirmed && !reservationFeedback) {
+                        reservationMessage.textContent = cupsAvailable === 0
+                            ? 'Las reservas para hoy están completas.'
+                            : '';
+                    }
+                } catch {
+                    cupsAvailable = null;
+                    availableCups.textContent = '--';
+                    reservationMessage.textContent = 'No pudimos consultar la disponibilidad. Reintentá en un momento.';
+                }
+                updateReservationSubmit();
+            }
+
+            function openReservation(event) {
+                event.preventDefault();
+                reservationModal.classList.remove('hidden');
+                reservationModal.classList.add('flex');
+                reservationModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('overflow-hidden');
+                reservationConfirmed = false;
+                reservationFeedback = '';
+                reservationSubmit.textContent = 'Confirmar reserva';
+                reservationMessage.textContent = '';
+                refreshAvailability();
+                window.clearInterval(availabilityTimer);
+                availabilityTimer = window.setInterval(refreshAvailability, 15000);
+                document.getElementById('coffee-variety').focus();
+            }
+
+            function closeReservation() {
+                reservationModal.classList.add('hidden');
+                reservationModal.classList.remove('flex');
+                reservationModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('overflow-hidden');
+                window.clearInterval(availabilityTimer);
+                availabilityTimer = null;
+            }
+
+            document.querySelectorAll('[data-reservation-open]').forEach(button => {
+                button.addEventListener('click', openReservation);
+            });
+            document.querySelectorAll('[data-reservation-close]').forEach(button => {
+                button.addEventListener('click', closeReservation);
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !reservationModal.classList.contains('hidden')) {
+                    closeReservation();
+                }
+            });
+            cupQuantity.addEventListener('change', updateReservationSubmit);
+
+            reservationForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                reservationSubmit.disabled = true;
+                reservationSubmit.textContent = 'Procesando...';
+                reservationFeedback = '';
+                reservationMessage.textContent = '';
+                const formData = new FormData(reservationForm);
+                const payload = Object.fromEntries(formData.entries());
+                payload.cantidad_tazas = Number(payload.cantidad_tazas);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/v1/reservas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(typeof data.detail === 'string' ? data.detail : 'Revisá los datos e intentá nuevamente.');
+                    }
+                    reservationConfirmed = true;
+                    reservationFeedback = 'Reserva confirmada. ¡Te esperamos en Lago Puelo!';
+                    reservationMessage.textContent = reservationFeedback;
+                    reservationMessage.classList.remove('text-gray-400');
+                    reservationMessage.classList.add('text-irupe-400');
+                    reservationSubmit.textContent = 'Reserva confirmada';
+                    await refreshAvailability();
+                } catch (error) {
+                    reservationFeedback = error.message || 'No pudimos completar la reserva. Intentá nuevamente.';
+                    reservationMessage.textContent = reservationFeedback;
+                    reservationSubmit.textContent = 'Confirmar reserva';
+                    await refreshAvailability();
+                }
             });
         });
     </script>
