@@ -15,7 +15,9 @@ Construye y ejecuta el contenedor desde la raíz de este repositorio:
 
 ```bash
 docker build -t aype-frontend:local -f frontend/Dockerfile frontend
-docker run --rm -p 8080:80 aype-frontend:local
+docker run --rm -p 8080:80 \
+	-e AYPE_API_BASE_URL=http://127.0.0.1:8000 \
+	aype-frontend:local
 ```
 
 Abre `http://localhost:8080`.

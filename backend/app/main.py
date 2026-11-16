@@ -1,4 +1,5 @@
 import os
+import hashlib
 from datetime import datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -26,8 +27,9 @@ app.add_middleware(
         ).split(',')
         if origin.strip()
     ],
-    allow_methods=['GET', 'POST'],
+    allow_methods=['GET', 'POST', 'OPTIONS'],
     allow_headers=['Content-Type'],
+    max_age=600,
 )
 
 # Inicialización de DynamoDB (Asume que los nombres de las tablas vienen por variables de entorno)
@@ -98,6 +100,9 @@ def crear_reserva(reserva: ReservaRequest):
     ahora = datetime.now(ZONA_HORARIA).isoformat()
     id_reserva = f'RES-{uuid4().hex}'
     id_contador = f'CONTADOR#{hoy}'
+    email_normalizado = str(reserva.email).strip().casefold()
+    email_hash = hashlib.sha256(email_normalizado.encode('utf-8')).hexdigest()
+    id_persona = f'PERSONA#{hoy}#{email_hash}'
     nueva_reserva = {
         'id': {'S': id_reserva},
         'fecha': {'S': hoy},
@@ -133,6 +138,27 @@ def crear_reserva(reserva: ReservaRequest):
                     }
                 },
                 {
+                    'Update': {
+                        'TableName': RESERVAS_TABLE,
+                        'Key': {'id': {'S': id_persona}},
+                        'UpdateExpression': 'SET #fecha = :fecha ADD #reservadas :cantidad',
+                        'ConditionExpression': (
+                            'attribute_not_exists(#reservadas) OR #reservadas <= :max_limit'
+                        ),
+                        'ExpressionAttributeNames': {
+                            '#fecha': 'fecha',
+                            '#reservadas': 'tazas_reservadas',
+                        },
+                        'ExpressionAttributeValues': {
+                            ':fecha': {'S': hoy},
+                            ':cantidad': {'N': str(reserva.cantidad_tazas)},
+                            ':max_limit': {
+                                'N': str(2 - reserva.cantidad_tazas)
+                            },
+                        },
+                    }
+                },
+                {
                     'Put': {
                         'TableName': RESERVAS_TABLE,
                         'Item': nueva_reserva,
@@ -143,6 +169,12 @@ def crear_reserva(reserva: ReservaRequest):
     except ClientError as error:
         error_code = error.response.get('Error', {}).get('Code')
         if error_code == 'TransactionCanceledException':
+            cancellation_reasons = error.response.get('CancellationReasons', [])
+            if len(cancellation_reasons) > 1 and cancellation_reasons[1].get('Code') == 'ConditionalCheckFailed':
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail='El límite es de 2 tazas por email por día.',
+                )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail='No quedan suficientes tazas disponibles para esa reserva.',

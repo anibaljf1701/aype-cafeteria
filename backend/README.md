@@ -11,7 +11,7 @@ API para consultar el menú de cafés y crear reservas. Está implementada con F
 - `POST /api/v1/reservas`: crea una reserva, con un máximo de 2 tazas por persona y un límite diario atómico de 50 tazas.
 - Documentación interactiva de FastAPI disponible en `/docs` al ejecutar la API.
 
-La reserva y el incremento del contador se guardan en una única transacción de DynamoDB. El contador diario usa la clave `CONTADOR#AAAA-MM-DD` y una condición sobre `tazas_reservadas`; el límite se comprueba antes de sumar la cantidad solicitada. Así, solicitudes concurrentes no pueden sobrepasar las 50 tazas ni dejar un contador incrementado sin su reserva correspondiente.
+La reserva, el contador diario y el acumulador personal se guardan en una única transacción de DynamoDB. El contador global usa la clave `CONTADOR#AAAA-MM-DD`; el personal usa `PERSONA#AAAA-MM-DD#<sha256-del-email-normalizado>`. Las condiciones verifican los topes de 50 tazas globales y 2 por email antes de sumar. Así, solicitudes concurrentes no pueden sobrepasar ninguno de los límites ni dejar contadores incrementados sin su reserva correspondiente. El email se normaliza con `strip().casefold()` antes de calcular la clave.
 
 ## Requisitos
 
@@ -37,11 +37,11 @@ La API estará disponible en `http://127.0.0.1:8000`; la documentación interact
 
 ## Configuración de AWS
 
-La aplicación usa la región `us-east-1` por defecto. Puede cambiarse mediante `AWS_REGION`. Los nombres de tabla se configuran con `RESERVAS_TABLE_NAME` y `MENU_TABLE_NAME`; por defecto son `aype-reservas` y `aype-menu`. `CORS_ALLOW_ORIGINS` acepta una lista separada por comas; por defecto permite `http://localhost:8080` y `http://127.0.0.1:8080`.
+La aplicación usa la región `us-east-1` por defecto. Puede cambiarse mediante `AWS_REGION`. Los nombres de tabla se configuran con `RESERVAS_TABLE_NAME` y `MENU_TABLE_NAME`; por defecto son `aype-reservas` y `aype-menu`. `CORS_ALLOW_ORIGINS` acepta los orígenes del frontend separados por comas; en desarrollo permite `http://localhost:8080` y `http://127.0.0.1:8080`. FastAPI responde a `GET`, `POST` y `OPTIONS` y acepta `Content-Type`.
 
-La tabla de reservas debe tener `id` como clave de partición. Las reservas normales y los registros `CONTADOR#AAAA-MM-DD` conviven en esa tabla; no se necesita un índice para contar las reservas. Las tablas deben crearse y configurarse en AWS antes de usar los endpoints. El rol de ejecución necesita permisos `dynamodb:GetItem` y `dynamodb:TransactWriteItems` sobre la tabla de reservas.
+La tabla de reservas debe tener `id` como clave de partición. Las reservas normales y los registros `CONTADOR#...` y `PERSONA#...` conviven en esa tabla; no se necesita un índice para contar las reservas. Las tablas deben crearse y configurarse en AWS antes de usar los endpoints. El rol de ejecución necesita permisos `dynamodb:GetItem` y `dynamodb:TransactWriteItems` sobre la tabla de reservas.
 
-El frontend usa `http://127.0.0.1:8000` como URL local de la API. Para otro entorno, define `window.AYPE_API_BASE_URL` antes del script principal de `frontend/site/index.html` y agrega el origen del sitio a `CORS_ALLOW_ORIGINS`.
+El contenedor del frontend genera `/config.js` al arrancar NGINX desde `AYPE_API_BASE_URL` (por defecto `http://127.0.0.1:8000`). Pasa la URL base de la API al contenedor para cada entorno; no se compila ni se incrusta en `index.html`. Configura `CORS_ALLOW_ORIGINS` en la API con el origen público del frontend, no con la URL de la API.
 
 Para AWS Lambda, el handler de la aplicación es `app.main.handler`.
 
