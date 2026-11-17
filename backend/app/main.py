@@ -9,6 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 from mangum import Mangum
 import boto3
 from botocore.exceptions import ClientError
+from app.slices.catas import router as catas_router
 
 # Configuración de la API
 app = FastAPI(
@@ -31,6 +32,7 @@ app.add_middleware(
     allow_headers=['Content-Type'],
     max_age=600,
 )
+app.include_router(catas_router)
 
 # Inicialización de DynamoDB (Asume que los nombres de las tablas vienen por variables de entorno)
 dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_REGION', 'us-east-1'))

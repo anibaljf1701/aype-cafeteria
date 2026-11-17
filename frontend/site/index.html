@@ -294,9 +294,9 @@
                     Capacidad estricta: <span class="text-irupe-400">10 personas.</span>
                 </p>
 
-                <a href="#contacto" class="inline-block px-8 py-3 bg-white text-ayme-900 hover:bg-irupe-500 hover:text-white transition-colors duration-300 text-xs font-semibold tracking-[0.2em] uppercase">
+                <button type="button" data-cata-reservation-open class="inline-block px-8 py-3 bg-white text-ayme-900 hover:bg-irupe-500 hover:text-white transition-colors duration-300 text-xs font-semibold tracking-[0.2em] uppercase">
                     Reservar Lugar
-                </a>
+                </button>
             </div>
         </div>
     </section>
@@ -368,6 +368,41 @@
         </section>
     </div>
 
+    <div id="cata-reservation-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm" aria-hidden="true">
+        <button type="button" data-cata-reservation-close class="absolute inset-0 h-full w-full cursor-default" aria-label="Cerrar reserva de cata"></button>
+        <section role="dialog" aria-modal="true" aria-labelledby="cata-reservation-title" class="relative z-10 w-full max-w-lg border border-ayme-700 bg-ayme-900 p-6 shadow-2xl sm:p-8">
+            <button type="button" data-cata-reservation-close class="absolute right-4 top-3 text-2xl font-light text-gray-400 transition hover:text-white" aria-label="Cerrar">&times;</button>
+            <span class="mb-3 block text-[10px] uppercase tracking-[0.3em] text-irupe-400">Experiencia AyPe</span>
+            <h2 id="cata-reservation-title" class="mb-2 font-serif text-3xl italic text-white">Reservá tu lugar</h2>
+            <p class="mb-6 text-xs font-light text-gray-400">Elegí una fecha y compartí el ritual.</p>
+
+            <form id="cata-reservation-form" class="space-y-4">
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="cata-date">Fecha
+                    <select id="cata-date" name="fecha" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-irupe-500">
+                        <option value="">Cargando fechas...</option>
+                    </select>
+                </label>
+                <p id="cata-availability" class="min-h-5 text-xs text-gray-400" aria-live="polite"></p>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="cata-quantity">Cantidad de lugares
+                    <select id="cata-quantity" name="cantidad_lugares" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition focus:border-irupe-500">
+                        <option value="1">1 lugar</option>
+                        <option value="2">2 lugares</option>
+                    </select>
+                </label>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="cata-customer-name">Nombre completo
+                    <input id="cata-customer-name" name="nombre_completo" type="text" autocomplete="name" minlength="1" maxlength="100" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition placeholder:text-gray-600 focus:border-irupe-500" placeholder="Tu nombre y apellido">
+                </label>
+                <label class="block text-xs uppercase tracking-widest text-gray-400" for="cata-customer-email">Email
+                    <input id="cata-customer-email" name="email" type="email" autocomplete="email" required class="mt-2 block w-full border border-ayme-700 bg-ayme-800 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none transition placeholder:text-gray-600 focus:border-irupe-500" placeholder="nombre@correo.com">
+                </label>
+                <p id="cata-reservation-message" class="min-h-5 text-sm text-gray-400" role="status" aria-live="polite"></p>
+                <button id="cata-reservation-submit" type="submit" disabled class="w-full border border-irupe-500 bg-irupe-600 px-4 py-4 text-xs font-medium uppercase tracking-[0.2em] text-white transition hover:bg-irupe-500 disabled:cursor-not-allowed disabled:border-ayme-700 disabled:bg-ayme-800 disabled:text-gray-500">
+                    Confirmar reserva
+                </button>
+            </form>
+        </section>
+    </div>
+
     <script src="/config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -378,6 +413,13 @@
             const menuIcon = document.getElementById('menu-icon');
             const mobileLinks = document.querySelectorAll('.mobile-link');
             const reservationModal = document.getElementById('reservation-modal');
+            const cataReservationModal = document.getElementById('cata-reservation-modal');
+            const cataReservationForm = document.getElementById('cata-reservation-form');
+            const cataReservationMessage = document.getElementById('cata-reservation-message');
+            const cataAvailability = document.getElementById('cata-availability');
+            const cataDate = document.getElementById('cata-date');
+            const cataQuantity = document.getElementById('cata-quantity');
+            const cataReservationSubmit = document.getElementById('cata-reservation-submit');
             const reservationForm = document.getElementById('reservation-form');
             const reservationMessage = document.getElementById('reservation-message');
             const availableCups = document.getElementById('available-cups');
@@ -388,6 +430,10 @@
             let availabilityTimer = null;
             let reservationConfirmed = false;
             let reservationFeedback = '';
+            let cataAvailabilityList = [];
+            let cataAvailabilityTimer = null;
+            let cataReservationConfirmed = false;
+            let cataReservationFeedback = '';
 
             // Nav Scroll Effect (Estilo oscuro/vidrio)
             window.addEventListener('scroll', () => {
@@ -476,18 +522,125 @@
                 availabilityTimer = null;
             }
 
+            function selectedCata() {
+                return cataAvailabilityList.find(cata => cata.fecha === cataDate.value);
+            }
+
+            function updateCataReservationSubmit() {
+                const cata = selectedCata();
+                cataReservationSubmit.disabled = cataReservationConfirmed
+                    || !cata
+                    || cata.cupos_disponibles < Number(cataQuantity.value);
+            }
+
+            function renderCataAvailability() {
+                const selectedDate = cataDate.value;
+                cataDate.replaceChildren();
+                if (!cataAvailabilityList.length) {
+                    cataDate.add(new Option('No hay fechas disponibles', ''));
+                    cataDate.disabled = true;
+                    cataAvailability.textContent = 'No hay próximas catas para reservar.';
+                    updateCataReservationSubmit();
+                    return;
+                }
+
+                cataDate.disabled = false;
+                cataAvailabilityList.forEach(cata => {
+                    const fecha = new Date(`${cata.fecha}T00:00:00Z`);
+                    const etiqueta = new Intl.DateTimeFormat('es-AR', {
+                        dateStyle: 'full',
+                        timeZone: 'UTC',
+                    }).format(fecha);
+                    const option = new Option(`${etiqueta} · ${cata.cupos_disponibles} lugares`, cata.fecha);
+                    option.disabled = cata.cupos_disponibles === 0;
+                    cataDate.add(option);
+                });
+                const previouslySelected = cataAvailabilityList.find(cata =>
+                    cata.fecha === selectedDate && cata.cupos_disponibles > 0
+                );
+                const firstAvailable = cataAvailabilityList.find(cata => cata.cupos_disponibles > 0);
+                cataDate.value = (previouslySelected || firstAvailable)?.fecha || '';
+                updateCataAvailabilityMessage();
+                updateCataReservationSubmit();
+            }
+
+            function updateCataAvailabilityMessage() {
+                const cata = selectedCata();
+                cataAvailability.textContent = cata
+                    ? `${cata.cupos_disponibles} de ${cata.cupo_total} lugares disponibles.`
+                    : 'Esta fecha ya está completa.';
+            }
+
+            async function refreshCataAvailability() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/v1/catas/proximas`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error('availability');
+                    const data = await response.json();
+                    cataAvailabilityList = data.catas || [];
+                    renderCataAvailability();
+                    if (!cataReservationConfirmed && !cataReservationFeedback) {
+                        cataReservationMessage.textContent = '';
+                    }
+                } catch {
+                    cataAvailabilityList = [];
+                    renderCataAvailability();
+                    cataAvailability.textContent = 'No pudimos consultar las fechas. Reintentá en un momento.';
+                }
+            }
+
+            function openCataReservation(event) {
+                event.preventDefault();
+                cataReservationModal.classList.remove('hidden');
+                cataReservationModal.classList.add('flex');
+                cataReservationModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('overflow-hidden');
+                cataReservationConfirmed = false;
+                cataReservationFeedback = '';
+                cataReservationSubmit.textContent = 'Confirmar reserva';
+                cataReservationMessage.textContent = '';
+                cataReservationMessage.classList.remove('text-irupe-400');
+                cataReservationMessage.classList.add('text-gray-400');
+                refreshCataAvailability();
+                window.clearInterval(cataAvailabilityTimer);
+                cataAvailabilityTimer = window.setInterval(refreshCataAvailability, 15000);
+                cataDate.focus();
+            }
+
+            function closeCataReservation() {
+                cataReservationModal.classList.add('hidden');
+                cataReservationModal.classList.remove('flex');
+                cataReservationModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('overflow-hidden');
+                window.clearInterval(cataAvailabilityTimer);
+                cataAvailabilityTimer = null;
+            }
+
             document.querySelectorAll('[data-reservation-open]').forEach(button => {
                 button.addEventListener('click', openReservation);
             });
+            document.querySelectorAll('[data-cata-reservation-open]').forEach(button => {
+                button.addEventListener('click', openCataReservation);
+            });
             document.querySelectorAll('[data-reservation-close]').forEach(button => {
                 button.addEventListener('click', closeReservation);
+            });
+            document.querySelectorAll('[data-cata-reservation-close]').forEach(button => {
+                button.addEventListener('click', closeCataReservation);
             });
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape' && !reservationModal.classList.contains('hidden')) {
                     closeReservation();
                 }
+                if (event.key === 'Escape' && !cataReservationModal.classList.contains('hidden')) {
+                    closeCataReservation();
+                }
             });
             cupQuantity.addEventListener('change', updateReservationSubmit);
+            cataDate.addEventListener('change', () => {
+                updateCataAvailabilityMessage();
+                updateCataReservationSubmit();
+            });
+            cataQuantity.addEventListener('change', updateCataReservationSubmit);
 
             reservationForm.addEventListener('submit', async event => {
                 event.preventDefault();
@@ -522,6 +675,42 @@
                     reservationSubmit.textContent = 'Confirmar reserva';
                     await refreshAvailability();
                 }
+            });
+
+            cataReservationForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                cataReservationSubmit.disabled = true;
+                cataReservationSubmit.textContent = 'Procesando...';
+                cataReservationFeedback = '';
+                cataReservationMessage.textContent = '';
+                const formData = new FormData(cataReservationForm);
+                const payload = Object.fromEntries(formData.entries());
+                payload.cantidad_lugares = Number(payload.cantidad_lugares);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/v1/catas/reservas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(typeof data.detail === 'string' ? data.detail : 'Revisá los datos e intentá nuevamente.');
+                    }
+                    cataReservationConfirmed = true;
+                    cataReservationFeedback = 'Reserva confirmada. ¡Te esperamos en la cata!';
+                    cataReservationMessage.textContent = cataReservationFeedback;
+                    cataReservationMessage.classList.remove('text-gray-400');
+                    cataReservationMessage.classList.add('text-irupe-400');
+                    cataReservationSubmit.textContent = 'Reserva confirmada';
+                    await refreshCataAvailability();
+                } catch (error) {
+                    cataReservationFeedback = error.message || 'No pudimos completar la reserva. Intentá nuevamente.';
+                    cataReservationMessage.textContent = cataReservationFeedback;
+                    cataReservationSubmit.textContent = 'Confirmar reserva';
+                    await refreshCataAvailability();
+                }
+                updateCataReservationSubmit();
             });
         });
     </script>
