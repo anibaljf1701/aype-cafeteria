@@ -13,6 +13,10 @@ API para consultar el menú de cafés y crear reservas. Está implementada con F
 - `POST /api/v1/catas/reservas`: reserva de 1 o 2 lugares para una fecha; el mismo email solo puede reservar una vez por fecha.
 - Documentación interactiva de FastAPI disponible en `/docs` al ejecutar la API.
 
+## Organización
+
+`app/main.py` expone `create_app()`, que construye FastAPI, configura CORS y registra los routers. Cada módulo de `app/slices/` contiene las rutas y reglas de una funcionalidad (`menu`, `reservas` o `catas`). La variable `app` se crea desde esa fábrica para Uvicorn y `handler` adapta la misma instancia para AWS Lambda.
+
 La reserva, el contador diario y el acumulador personal se guardan en una única transacción de DynamoDB. El contador global usa la clave `CONTADOR#AAAA-MM-DD`; el personal usa `PERSONA#AAAA-MM-DD#<sha256-del-email-normalizado>`. Las condiciones verifican los topes de 50 tazas globales y 2 por email antes de sumar. Así, solicitudes concurrentes no pueden sobrepasar ninguno de los límites ni dejar contadores incrementados sin su reserva correspondiente. El email se normaliza con `strip().casefold()` antes de calcular la clave.
 
 ## Requisitos
