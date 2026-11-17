@@ -65,6 +65,9 @@ class CatasSliceTests(unittest.TestCase):
         items = self.dynamodb.client.transaction
 
         self.assertEqual(resultado.cantidad_lugares, 2)
+        self.assertEqual(len(items), 3)
+        self.assertIn('ADD #reservados :cantidad', items[0]['Update']['UpdateExpression'])
+        self.assertIn('#reservados <= :max_limit', items[0]['Update']['ConditionExpression'])
         self.assertEqual(items[0]['Update']['ExpressionAttributeValues'][':max_limit']['N'], '8')
         self.assertEqual(items[1]['Put']['Item']['id'], {
             'S': f'CATA_EMAIL#{self.fecha_cata.isoformat()}#'
@@ -91,6 +94,25 @@ class CatasSliceTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.status_code, 409)
         self.assertIn('ya tiene una reserva', raised.exception.detail)
+
+    def test_cupo_agotado_rechaza_la_transaccion(self):
+        self.dynamodb.client.error = ClientError(
+            {
+                'Error': {'Code': 'TransactionCanceledException'},
+                'CancellationReasons': [
+                    {'Code': 'ConditionalCheckFailed'},
+                    {'Code': 'None'},
+                    {'Code': 'None'},
+                ],
+            },
+            'TransactWriteItems',
+        )
+
+        with self.assertRaises(HTTPException) as raised:
+            catas.crear_reserva_cata(self.reserva())
+
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertIn('suficientes lugares', raised.exception.detail)
 
 
 if __name__ == '__main__':
