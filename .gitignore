@@ -6,7 +6,8 @@ __pycache__/
 .env
 .env.*
 !.env.example
-.vscode/
+.vscode/*
+!.vscode/settings.json
 coverage/
 node_modules/
 dist/

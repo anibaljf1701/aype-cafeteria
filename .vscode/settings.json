@@ -1,0 +1,24 @@
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/awslabs/serverless-application-model/main/samtranslator/schema/schema.json": [
+      "backend/template.yaml"
+    ]
+  },
+  "yaml.customTags": [
+    "!Ref",
+    "!Sub",
+    "!GetAtt",
+    "!Join",
+    "!Select",
+    "!If",
+    "!Equals",
+    "!And",
+    "!Or",
+    "!Not",
+    "!FindInMap",
+    "!Base64",
+    "!ImportValue",
+    "!Condition",
+    "!Cidr"
+  ]
+}
