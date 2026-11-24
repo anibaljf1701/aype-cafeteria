@@ -105,3 +105,11 @@ El target group quedará sin targets hasta desplegar ECS y asociar el servicio.
 CloudFront, los registros DNS de la aplicación y HTTPS entre CloudFront y el ALB
 se incorporarán en la capa de edge/certificados. El prefix list restringe el
 origen a la red de CloudFront, no a una distribución específica.
+
+## Datos persistentes
+
+La capa independiente `layers/02-data` administra las tablas DynamoDB de menú y
+reservas/catas, además de publicar sus nombres y ARNs en SSM Parameter Store.
+Tiene un estado separado por entorno para que el ciclo de vida de la API no
+administre las tablas. Consulta [layers/02-data/README.md](layers/02-data/README.md)
+para aplicarla antes del despliegue SAM.
