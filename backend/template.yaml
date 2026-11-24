@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AyPe Coffee API on AWS Lambda and API Gateway HTTP API
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+  MenuTableNameParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+  MenuTableArnParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+  ReservasTableNameParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+  ReservasTableArnParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+  FrontendOrigin:
+    Type: String
+
+Resources:
+  AyPeHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: '$default'
+
+  AyPeApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'aype-${Environment}-api'
+      CodeUri: .
+      Handler: app.main.handler
+      Runtime: python3.12
+      MemorySize: 256
+      Timeout: 15
+      Environment:
+        Variables:
+          MENU_TABLE_NAME: !Ref MenuTableNameParameter
+          RESERVAS_TABLE_NAME: !Ref ReservasTableNameParameter
+          CORS_ALLOW_ORIGINS: !Ref FrontendOrigin
+      Policies:
+        - Statement:
+            - Sid: ReadMenuTable
+              Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !Ref MenuTableArnParameter
+            - Sid: ReadAndWriteReservationsTable
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:TransactWriteItems
+              Resource: !Ref ReservasTableArnParameter
+      Events:
+        RootApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AyPeHttpApi
+            Path: /
+            Method: ANY
+            PayloadFormatVersion: '2.0'
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref AyPeHttpApi
+            Path: /{proxy+}
+            Method: ANY
+            PayloadFormatVersion: '2.0'
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the AyPe API
+    Value: !Sub 'https://${AyPeHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'

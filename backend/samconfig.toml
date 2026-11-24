@@ -1,0 +1,19 @@
+version = 0.1
+
+[dev.deploy.parameters]
+stack_name = "aype-api-dev"
+resolve_s3 = true
+s3_prefix = "aype-api-dev"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+parameter_overrides = "Environment=dev MenuTableNameParameter=/aype/dev/dynamodb/menu/name MenuTableArnParameter=/aype/dev/dynamodb/menu/arn ReservasTableNameParameter=/aype/dev/dynamodb/reservas/name ReservasTableArnParameter=/aype/dev/dynamodb/reservas/arn FrontendOrigin=http://localhost:8080"
+
+[prod.deploy.parameters]
+stack_name = "aype-api-prod"
+resolve_s3 = true
+s3_prefix = "aype-api-prod"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+parameter_overrides = "Environment=prod MenuTableNameParameter=/aype/prod/dynamodb/menu/name MenuTableArnParameter=/aype/prod/dynamodb/menu/arn ReservasTableNameParameter=/aype/prod/dynamodb/reservas/name ReservasTableArnParameter=/aype/prod/dynamodb/reservas/arn FrontendOrigin=https://aype.com"

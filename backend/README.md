@@ -53,6 +53,34 @@ El contenedor del frontend genera `/config.js` al arrancar NGINX desde `AYPE_API
 
 Para AWS Lambda, el handler de la aplicación es `app.main.handler`.
 
-## Pendiente
+## Despliegue con AWS SAM
 
-Este repositorio contiene por ahora el código principal de la API, `requirements.txt` y `.gitignore`. Faltan, entre otros elementos, archivos de infraestructura o configuración de despliegue, pruebas automatizadas y configuración de entornos. El despliegue y la integración con recursos reales de AWS aún no están documentados ni verificados.
+Terraform administra las tablas persistentes en `terraform/layers/02-data`; SAM
+administra la Lambda y API Gateway HTTP. Despliega primero la capa Terraform para
+crear los parámetros SSM que consume SAM. No agregues las tablas al stack SAM.
+
+Desde la raíz del repositorio, inicializa, planifica y aplica el entorno deseado:
+
+```bash
+terraform -chdir=terraform/layers/02-data init -reconfigure -backend-config=environments/dev.backend.hcl
+terraform -chdir=terraform/layers/02-data plan -var-file=environments/dev.tfvars
+terraform -chdir=terraform/layers/02-data apply -var-file=environments/dev.tfvars
+```
+
+Para producción, reemplaza `dev` por `prod` en los archivos de backend y
+variables. Luego despliega la API desde `backend/`:
+
+```bash
+cd backend
+sam build
+sam deploy --config-env dev
+```
+
+Usa `--config-env prod` para producción. La configuración por entorno está en
+`samconfig.toml`; SAM resuelve nombres y ARNs desde SSM durante el despliegue.
+La Lambda no necesita permisos para leer SSM en runtime. El origen configurado
+para CORS debe coincidir con el dominio público del frontend. Después del deploy,
+configura el output `ApiUrl` como `AYPE_API_BASE_URL` en el contenedor frontend.
+El deploy requiere permisos para CloudFormation, Lambda, API Gateway, S3 de
+artefactos, creación del rol IAM y lectura de los parámetros SSM. Estos comandos
+describen el flujo; no se ejecutan automáticamente contra AWS.

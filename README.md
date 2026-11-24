@@ -28,4 +28,12 @@ Consulta [backend/README.md](backend/README.md) para dependencias, configuració
 
 ## Infraestructura y despliegue
 
-La infraestructura propia de AyPe todavía no está consolidada en este repositorio. `ecs-fargate-frontend-migration` y `aws-terraform-3tier-architecture` son proyectos de referencia independientes, no dependencias locales de esta aplicación. Antes de desplegar, definir y versionar aquí los recursos, variables por entorno, permisos IAM y pipeline propios de AyPe.
+Terraform administra la infraestructura de red y frontend, junto con los datos
+persistentemente almacenados en la capa `terraform/layers/02-data`. AWS SAM
+administra la Lambda y API Gateway HTTP; consume desde SSM los nombres y ARNs de
+las tablas creadas por Terraform. Consulta [terraform/README.md](terraform/README.md)
+y [backend/README.md](backend/README.md) para el orden de despliegue por entorno.
+
+`ecs-fargate-frontend-migration` y `aws-terraform-3tier-architecture` son
+proyectos de referencia independientes, no dependencias locales de esta
+aplicación.

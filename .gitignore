@@ -11,6 +11,7 @@ coverage/
 node_modules/
 dist/
 .terraform/
+.aws-sam/
 *.tfstate
 *.tfstate.*
 *.tfplan
