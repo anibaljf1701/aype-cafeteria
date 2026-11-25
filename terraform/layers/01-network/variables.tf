@@ -22,6 +22,18 @@ variable "frontend_port" {
   default     = 80
 }
 
+variable "frontend_image_tag" {
+  description = "Etiqueta de la imagen frontend publicada en ECR"
+  type        = string
+  default     = "latest"
+}
+
+variable "frontend_desired_count" {
+  description = "Cantidad de tareas frontend que ECS debe mantener"
+  type        = number
+  default     = 1
+}
+
 variable "environment" {
   description = "Entorno de despliegue (dev o prod)"
   type        = string

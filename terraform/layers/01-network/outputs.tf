@@ -38,6 +38,21 @@ output "frontend_security_group_id" {
   value       = aws_security_group.frontend.id
 }
 
+output "frontend_ecr_repository_url" {
+  description = "URL del repositorio ECR para publicar la imagen frontend"
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+output "frontend_ecs_cluster_name" {
+  description = "Nombre del cluster ECS que ejecuta el frontend"
+  value       = aws_ecs_cluster.frontend.name
+}
+
+output "frontend_ecs_service_name" {
+  description = "Nombre del servicio ECS frontend"
+  value       = aws_ecs_service.frontend.name
+}
+
 output "route53_zone_id" {
   description = "ID de la zona alojada; se crea únicamente en prod"
   value       = try(aws_route53_zone.primary[0].zone_id, null)

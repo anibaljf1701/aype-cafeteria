@@ -95,13 +95,39 @@ duplicadas. Luego de aplicar, configura en el registrador los name servers
 expuestos por el output `route53_name_servers`. La zona no registra ni renueva el
 dominio.
 
-Cada entorno crea su propio ALB y target group. El ALB acepta HTTP desde el
-prefix list administrado de CloudFront; el grupo de seguridad frontend acepta
-tráfico del puerto 80 únicamente desde el SG del ALB. Al desplegar Fargate en
-subredes públicas, habilita la asignación de IP pública y usa el output
-`frontend_security_group_id` en el servicio ECS.
+Cada entorno crea su propio ALB, target group, repositorio ECR y servicio ECS
+Fargate. El ALB acepta HTTP desde el prefix list administrado de CloudFront; el
+grupo de seguridad frontend acepta el puerto 80 únicamente desde el SG del ALB.
+Las tareas usan subredes públicas con IP pública para descargar la imagen y
+publicar logs sin NAT Gateway. El rol de ejecución se limita a las políticas
+estándar de ECS; el contenedor no necesita un rol de aplicación.
 
-El target group quedará sin targets hasta desplegar ECS y asociar el servicio.
+Para el primer despliegue, crea primero el repositorio ECR con un apply dirigido:
+
+```bash
+terraform -chdir=terraform/layers/01-network init -reconfigure -backend-config=environments/dev.backend.hcl
+terraform -chdir=terraform/layers/01-network apply -var-file=environments/dev.tfvars -target=aws_ecr_repository.frontend
+```
+
+Publica la imagen desde la raíz del repositorio, reemplazando la cuenta si
+corresponde:
+
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REGION=us-east-1
+REPOSITORY=aype-dev-frontend
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
+docker build -t "$REPOSITORY:latest" -f frontend/Dockerfile frontend
+docker tag "$REPOSITORY:latest" "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY:latest"
+docker push "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY:latest"
+```
+
+Luego ejecuta un `terraform apply` normal para crear el cluster, la task
+definition y el servicio. Para `prod`, reemplaza `dev` por `prod` en backend,
+tfvars y nombre del repositorio. Al publicar una nueva imagen con la misma
+etiqueta, fuerza un nuevo despliegue del servicio ECS para que las tareas la
+descarguen.
+
 CloudFront, los registros DNS de la aplicación y HTTPS entre CloudFront y el ALB
 se incorporarán en la capa de edge/certificados. El prefix list restringe el
 origen a la red de CloudFront, no a una distribución específica.
