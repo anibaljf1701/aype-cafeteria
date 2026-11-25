@@ -132,7 +132,10 @@ del servicio ECS para que las tareas la descarguen.
 
 CloudFront, los registros DNS de la aplicación y HTTPS entre CloudFront y el ALB
 se incorporarán en la capa de edge/certificados. El prefix list restringe el
-origen a la red de CloudFront, no a una distribución específica.
+origen a la red de CloudFront, no a una distribución específica. NGINX devuelve
+`Cache-Control: no-store` para `/config.js`; al agregar CloudFront, configura
+ese path con la política `CachingDisabled` o `MinTTL = 0`, porque un TTL mínimo
+positivo puede hacer que CloudFront ignore los headers de caché del origen.
 
 ## Datos persistentes
 
