@@ -53,8 +53,11 @@ El contenedor del frontend genera `/config.js` al arrancar NGINX desde
 `AYPE_API_BASE_URL`. En ECS, la task definition lee la URL del parámetro SSM
 `/aype/{entorno}/api/url`; el stack SAM crea o actualiza ese parámetro junto con
 la API. Es una URL pública, no un secreto. En desarrollo local puede pasarse
-`AYPE_API_BASE_URL` directamente al contenedor. Configura `CORS_ALLOW_ORIGINS`
-en la API con el origen público del frontend, no con la URL de la API.
+`AYPE_API_BASE_URL` directamente al contenedor; si se omite, el contenedor falla
+por defecto y solo usa `http://127.0.0.1:8000` con
+`ALLOW_LOCAL_API_FALLBACK=true`. Ese fallback se rechaza dentro de ECS.
+Configura `CORS_ALLOW_ORIGINS` en la API con el origen público del frontend, no
+con la URL de la API.
 
 Para AWS Lambda, el handler de la aplicación es `app.main.handler`.
 
