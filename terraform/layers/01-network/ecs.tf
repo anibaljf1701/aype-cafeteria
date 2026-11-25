@@ -50,6 +50,22 @@ resource "aws_iam_role_policy_attachment" "frontend_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role_policy" "frontend_api_parameter" {
+  name = "${var.project_name}-${var.environment}-frontend-api-parameter"
+  role = aws_iam_role.frontend_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameters"]
+      Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/api/url"
+    }]
+  })
+}
+
 resource "aws_ecs_cluster" "frontend" {
   name = "${var.project_name}-${var.environment}-frontend"
 
@@ -80,6 +96,10 @@ resource "aws_ecs_task_definition" "frontend" {
     environment = [{
       name  = "ALLOW_LOCAL_API_FALLBACK"
       value = "false"
+    }]
+    secrets = [{
+      name      = "AYPE_API_BASE_URL"
+      valueFrom = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/api/url"
     }]
     logConfiguration = {
       logDriver = "awslogs"
@@ -122,7 +142,11 @@ resource "aws_ecs_service" "frontend" {
     container_port   = var.frontend_port
   }
 
-  depends_on = [aws_lb_listener.frontend_http]
+  depends_on = [
+    aws_lb_listener.frontend_http,
+    aws_iam_role_policy.frontend_api_parameter,
+    aws_iam_role_policy_attachment.frontend_task_execution,
+  ]
 
   tags = {
     Environment = var.environment

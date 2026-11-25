@@ -25,6 +25,14 @@ Resources:
     Properties:
       StageName: '$default'
 
+  ApiUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/aype/${Environment}/api/url'
+      Type: String
+      Description: !Sub 'Public API URL for the ${Environment} frontend'
+      Value: !Sub 'https://${AyPeHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+
   AyPeApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -72,3 +80,6 @@ Outputs:
   ApiUrl:
     Description: Base URL for the AyPe API
     Value: !Sub 'https://${AyPeHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+  ApiUrlParameterName:
+    Description: SSM parameter consumed by the ECS frontend task
+    Value: !Sub '/aype/${Environment}/api/url'

@@ -49,7 +49,12 @@ La tabla de reservas debe tener `id` como clave de partición. Las reservas de t
 
 El calendario de catas es semanal y se identifica por fecha ISO (`AAAA-MM-DD`). Se configura con `CATA_DIA_SEMANA` (0 lunes a 6 domingo; valor predeterminado `5`, sábado), `CATA_CUPO_TOTAL` (predeterminado `10`) y `CATA_SEMANAS_PROXIMAS` (predeterminado `8`). El endpoint público lee los contadores por fecha y el POST crea la reserva y reclama el email normalizado en la misma transacción; los intentos duplicados o sin cupo responden `409 Conflict`.
 
-El contenedor del frontend genera `/config.js` al arrancar NGINX desde `AYPE_API_BASE_URL` (por defecto `http://127.0.0.1:8000`). Pasa la URL base de la API al contenedor para cada entorno; no se compila ni se incrusta en `index.html`. Configura `CORS_ALLOW_ORIGINS` en la API con el origen público del frontend, no con la URL de la API.
+El contenedor del frontend genera `/config.js` al arrancar NGINX desde
+`AYPE_API_BASE_URL`. En ECS, la task definition lee la URL del parámetro SSM
+`/aype/{entorno}/api/url`; el stack SAM crea o actualiza ese parámetro junto con
+la API. Es una URL pública, no un secreto. En desarrollo local puede pasarse
+`AYPE_API_BASE_URL` directamente al contenedor. Configura `CORS_ALLOW_ORIGINS`
+en la API con el origen público del frontend, no con la URL de la API.
 
 Para AWS Lambda, el handler de la aplicación es `app.main.handler`.
 
@@ -78,9 +83,10 @@ sam deploy --config-env dev
 
 Usa `--config-env prod` para producción. La configuración por entorno está en
 `samconfig.toml`; SAM resuelve nombres y ARNs desde SSM durante el despliegue.
-La Lambda no necesita permisos para leer SSM en runtime. El origen configurado
-para CORS debe coincidir con el dominio público del frontend. Después del deploy,
-configura el output `ApiUrl` como `AYPE_API_BASE_URL` en el contenedor frontend.
+la Lambda no necesita permisos para leer SSM en runtime. El origen configurado
+para CORS debe coincidir con el dominio público del frontend. El deploy publica
+`ApiUrl` también en `/aype/{entorno}/api/url`; despliega SAM antes de crear el
+servicio ECS frontend.
 El deploy requiere permisos para CloudFormation, Lambda, API Gateway, S3 de
 artefactos, creación del rol IAM y lectura de los parámetros SSM. Estos comandos
 describen el flujo; no se ejecutan automáticamente contra AWS.

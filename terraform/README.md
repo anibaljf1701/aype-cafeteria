@@ -122,11 +122,13 @@ docker tag "$REPOSITORY:latest" "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO
 docker push "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY:latest"
 ```
 
-Luego ejecuta un `terraform apply` normal para crear el cluster, la task
-definition y el servicio. Para `prod`, reemplaza `dev` por `prod` en backend,
-tfvars y nombre del repositorio. Al publicar una nueva imagen con la misma
-etiqueta, fuerza un nuevo despliegue del servicio ECS para que las tareas la
-descarguen.
+Luego despliega primero la API con SAM (consulta
+[backend/README.md](../backend/README.md)); ese stack publica la URL en
+`/aype/dev/api/url`, que ECS lee al iniciar. Después ejecuta un `terraform
+apply` normal para crear el cluster, la task definition y el servicio. Para
+`prod`, reemplaza `dev` por `prod` en backend, tfvars y nombre del repositorio.
+Al publicar una nueva imagen con la misma etiqueta, fuerza un nuevo despliegue
+del servicio ECS para que las tareas la descarguen.
 
 CloudFront, los registros DNS de la aplicación y HTTPS entre CloudFront y el ALB
 se incorporarán en la capa de edge/certificados. El prefix list restringe el
